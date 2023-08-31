@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8' />
+<title>鉄道路線図（駅間データ）</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://unpkg.com/maplibre-gl@^2.4/dist/maplibre-gl.js'></script>
+<link href='https://unpkg.com/maplibre-gl@^2.4/dist/maplibre-gl.css' rel='stylesheet' />
+<script src="https://unpkg.com/pmtiles@2.5.0/dist/index.js"></script>
+<style>
+body { margin:0; padding:0;}
+
+
+#map {
+  position: absolute;
+  top: 0;
+  bottom: 40px;
+  width: 100%;
+}
+
+</style>
+<script>
+</script>
+</head>
+<body>
+
+
+<div id='map'></div>
+
+<script>
+
+/*************************************************/
+/*Maplibre 関係設定                              */
+/*************************************************/
+const map = new maplibregl.Map({
+  container: 'map', // container id
+  hash: true, //add #position on URL
+  style: "./test.json",
+  center: [139.78148, 35.768793], // starting position [lng, lat]
+  zoom: 4, // starting zoom
+  minZoom: 4,
+  maxZoom: 17.99,
+  attributionControl: false,
+  //clickTolerance: 10,
+  localIdeographFontFamily: ['MS Gothic', 'Hiragino Kaku Gothic Pro', 'sans-serif']
+});
+
+
+map.addControl(new maplibregl.NavigationControl(), 'top-left');
+map.addControl(new maplibregl.ScaleControl() );
+map.addControl(new maplibregl.AttributionControl({compact: true}), 'top-right');
+
+map.showTileBoundaries = true;
+
+/*************************************************/
+/*PMTILES 関係設定                               */
+/*************************************************/
+let protocol = new pmtiles.Protocol();
+
+const urlConvert = (url) => {
+  const re = new RegExp(/^(.+)\/(\d+)\/(\d+)\/(\d+)/);
+  const m = url.match(re);  
+  
+  // 例：タイル座標に基づくモジュール分割されている場合
+  /*
+  const zl = m[2];
+  const x = m[3];
+  const y = m[4];
+  
+  const moduleZoom = 6;
+  const _flag = (zl > moduleZoom);
+  const dz = Math.abs(zl - moduleZoom);
+  
+  const moduleX = _flag ? x >> dz : x << dz;
+  const moduleY = _flag ? y >> dz : y << dz;
+  
+  const myUrl = url.replace(/\.pmtiles/, `-${moduleZoom}-${moduleX}-${moduleY}.pmtiles`);
+  */
+  
+  // テスト：タイルの X 座標が２で割り切れるかどうかで読込先の PMTiles を切り替える。
+  const myUrl = (+m[3] + +m[4]) % 2 ? url : url.replace("section.pmtiles", `station.pmtiles`);
+  
+  return myUrl;
+}
+
+const myProtocol = (param, callback) => {
+  console.log(param);
+  // URL を変換
+  if(param.type != "json"){
+    param.url = urlConvert(param.url);
+    console.log("converted:" + param.url);
+  }
+  return protocol.tile(param, callback);
+}
+
+maplibregl.addProtocol("pmtiles", protocol.tile);
+maplibregl.addProtocol("multi-pmtiles", myProtocol);
+
+/*************************************************/
+/*データ 関係設定                                */
+/*************************************************/
+
+map.on('load', () => {
+ map.addSource("my-pmtiles", {
+   type: 'vector',
+   tiles: ["multi-pmtiles://https://mghs15.github.io/flagment-inter-station/railway-section.pmtiles/{z}/{x}/{y}/"],
+   minzoom: 4,
+   maxzoom: 10,
+   attribution: "国土数値情報/Wikipedia"
+ });
+
+ map.addLayer({
+   'id': 'my-main-layer-2',
+   'type': 'circle',
+   'source': 'my-pmtiles',
+   'source-layer': 'railway',
+   'layout': {
+     'visibility': 'visible'
+   },
+   'paint': {
+     'circle-color': ["case",
+       ['has', 'from'],
+       ['rgb', 255, 255, 255],
+       ['rgb', 255, 0, 0],
+     ],
+     'circle-opacity': 1,
+     'circle-radius': 3,
+     'circle-stroke-color': ['rgb', 0, 0, 0],
+     'circle-stroke-width': 1,
+   }
+ });
+
+});
+</script>
+
+</body>
+</html>
