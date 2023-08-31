@@ -6,6 +6,7 @@
 let protocol = new pmtiles.Protocol();
 const urlConvert = (url) => {
   // convert url
+  return url;
 }
 const myProtocol = (param, callback) => {
   console.log(param);
