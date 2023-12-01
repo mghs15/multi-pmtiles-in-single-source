@@ -10,6 +10,11 @@ https://mghs15.github.io/multi-pmtiles-in-single-source/
 
 ## やり方
 ```
+<script src='https://unpkg.com/maplibre-gl@^2.4/dist/maplibre-gl.js'></script>
+<link href='https://unpkg.com/maplibre-gl@^2.4/dist/maplibre-gl.css' rel='stylesheet' />
+<script src="https://unpkg.com/pmtiles@2.5.0/dist/index.js"></script>
+```
+```
 let protocol = new pmtiles.Protocol();
 const urlConvert = (url) => {
   // convert url
